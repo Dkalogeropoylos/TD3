@@ -40,7 +40,7 @@ import random
 from collections import deque
 
 class ReplayBuffer:
-    def __init__(self, buffer_size, eta=0.997, cmin=2800):
+    def __init__(self, buffer_size, eta=0.997,cmin=500):
         self.storage = deque(maxlen=buffer_size)  # Automatically handles buffer overflow
         self.memory_size = buffer_size
         self.eta = eta  # Decay rate for ERE
@@ -114,7 +114,7 @@ class ReplayBuffer:
     
     
     
-    def sample(self, batch_size, update_num=None, total_updates=1000):
+    def sample1(self, batch_size, update_num=None, total_updates=1000):
         """
         Samples a batch using ERE or regular sampling logic.
         """
@@ -135,6 +135,39 @@ class ReplayBuffer:
         indices = random.sample(indices_range, min(batch_size, len(indices_range)))
 
         return self._encode_sample(indices)
+    def sample(self, batch_size,update_num=None,total_updates=6750):
+     
+        n = len(self.storage)  # Current buffer size
+
+        print(f"Sampling Step: update_num={update_num}, buffer_size={n}, total_updates={total_updates}")
+        if update_num is None:
+            update_num = self.update_num if hasattr(self, "update_num") else 0  # ✅ Use self.update_num properly
+
+        if self.first_update:
+            c_k = n  # Use the entire buffer for the first update
+            self.first_update = False
+            print(f"First update: Using full buffer c_k = {c_k}")
+        else:
+            if update_num is not None:
+                if n <= self.cmin:
+                    c_k = n  # Use full buffer until cmin is reached
+                    print(f"Uniform Sampling: Using full buffer c_k = {c_k}")
+                else:
+                    c_k_before = int(n * (self.eta ** ((update_num - self.cmin) / total_updates)))
+                    print(f"Before decay: c_k = {c_k_before}, cmin = {self.cmin}")
+
+                    c_k = max(c_k_before, self.cmin)
+                    print(f"Final c_k after clipping: {c_k}")
+            else:
+                c_k = n  # Default to full buffer
+                print(f"No update_num provided, using full buffer c_k = {c_k}")
+
+        indices_range = range(max(n - c_k, 0), n)
+        indices = random.sample(indices_range, min(batch_size, len(indices_range)))
+
+        print(f"Sampling {len(indices)} elements from range [{max(n - c_k, 0)}, {n})")
+
+        return self._encode_sample(indices)
 
 
     # Get the current size of the buffer
@@ -149,7 +182,12 @@ class ReplayBuffer:
     def save_buffer(self, path, name):
        
         path = os.path.join(path, name)
-        np.save(path, list(self.storage))
+        
+        self.storage = np.array(self.storage, dtype=object)
+        np.save(path, self.storage)
+
+        #np.save(path, list(self.storage))
+        
         
             
     
@@ -227,8 +265,9 @@ class Actor(nn.Module):
         actions_logits = self.actor_mlp(state)
         action_probs = F.softmax(actions_logits, dim=-1)
         action_distribution = Categorical(action_probs)
+        
         action = action_distribution.sample()
-
+        
         arg_max_action = torch.argmax(action_probs)
 
         return action.item(), arg_max_action.item()
