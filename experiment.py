@@ -136,8 +136,8 @@ class Experiment:
         #self.maze_game_random_agent(0,10)
         for i_block in range(self.max_blocks):
             print("Test Block: ", i_block)
-            test_block_metrics_dict['block_'+str(i_block)] = {}
-            test_block_metrics_dict = self.maze_game(test_block_metrics_dict,'block_'+str(i_block),int(self.games_per_block/2), i_block,'test')
+            #test_block_metrics_dict['block_'+str(i_block)] = {}
+            #test_block_metrics_dict = self.maze_game(test_block_metrics_dict,'block_'+str(i_block),int(self.games_per_block/2), i_block,'test')
             print("Train Block: ", i_block)
             train_block_metrics_dict['block_'+str(i_block)] = {}
             train_block_metrics_dict = self.maze_game(train_block_metrics_dict,'block_'+str(i_block),int(self.games_per_block/2), i_block,'train')
@@ -162,7 +162,7 @@ class Experiment:
             file_name = 'buffer_'+str(c)+'.npy'
             c += 1
         
-        #######self.agent.memory.save_buffer(os.path.join('results',self.mode,'buffer',self.participant_name),file_name )
+        self.agent.memory.save_buffer(os.path.join('results',self.mode,'buffer',self.participant_name),file_name )
    
     def mz_experiment2(self, participant_name):
             train_block_metrics_dict = {}
@@ -204,8 +204,8 @@ class Experiment:
         test_block_metrics_dict = {}
         for i_block in range(self.max_blocks):
             print("Test Block: ", i_block)
-            #test_block_metrics_dict['block_'+str(i_block)] = {}
-            #test_block_metrics_dict = self.maze_two_agents(test_block_metrics_dict,'block_'+str(i_block),int(self.games_per_block/2), i_block,'test')
+            test_block_metrics_dict['block_'+str(i_block)] = {}
+            test_block_metrics_dict = self.maze_two_agents(test_block_metrics_dict,'block_'+str(i_block),int(self.games_per_block/2), i_block,'test')
             print("Train Block: ", i_block)
             train_block_metrics_dict['block_'+str(i_block)] = {}
             train_block_metrics_dict = self.maze_two_agents(train_block_metrics_dict,'block_'+str(i_block),int(self.games_per_block/2), i_block,'train')
@@ -1096,6 +1096,7 @@ class Experiment:
         start_grad_updates = time.time()
         end_grad_updates = 0
         misc_duration = 0
+        
 
         # we play with the RL agent
         if not self.second_human:
