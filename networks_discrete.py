@@ -36,13 +36,16 @@ def init_weights(m):
 
 
 class ReplayBuffer:
-    def __init__(self, memory_size, eta=0.999, cmin=2000):
+    def __init__(self, memory_size, eta=0.997, cmin=1000):
         self.storage = []
         self.memory_size = memory_size
         self.next_idx = 0
         self.eta = eta  
         self.cmin = cmin  
         self.first_update = True  
+        self.ere_active = False
+        self.ere_update_count = None
+        self.adj_total_updates = 0
 
     def get_size(self):
         return len(self.storage)
@@ -55,7 +58,7 @@ class ReplayBuffer:
             self.storage[self.next_idx] = data
         self.next_idx = (self.next_idx + 1) % self.memory_size
 
-    def sample(self, batch_size, total_updates=6250):
+    def sample1(self, batch_size, total_updates=6250):
         n = self.get_size()  
         print(f"Sampling Step: update_num={self.next_idx}, buffer_size={n}, total_updates={total_updates}")
 
@@ -65,8 +68,11 @@ class ReplayBuffer:
             c_k = n  
             print(f"Uniform Sampling: Using full buffer c_k = {c_k}")
         else:
-            update_num = self.next_idx  
+            update_num = self.next_idx 
+            print("update_numinsi :", update_num) 
             c_k_before = int(n * (self.eta ** ((update_num - self.cmin) * 1000 / total_updates)))
+            self.counter=self.counter + 1
+            print(self.counter)
             print(f"Before decay: c_k = {c_k_before}, cmin = {self.cmin}")
 
             c_k = max(c_k_before, self.cmin)
@@ -81,7 +87,44 @@ class ReplayBuffer:
         indices = random.sample(indices_range, min(batch_size, len(indices_range)))
 
         return self._encode_sample(indices)
+    
+    def sample(self, batch_size, total_updates=6250):
+        n = self.get_size()
+        print(f"Sampling Step: update_num={self.next_idx}, buffer_size={n}, total_updates={total_updates}")
 
+
+
+        if n <= self.cmin:
+            c_k = n
+            print(f"Uniform Sampling: Using full buffer c_k = {c_k}")
+        else:
+            if not self.ere_active:
+                self.ere_active = True
+                self.ere_update_count = 1
+                self.adj_total_updates= total_updates - n
+                print(f"adjusted total updates: {self.adj_total_updates}")
+
+
+
+
+
+            c_k_before = int(n * (self.eta ** (self.ere_update_count  * 1000 / self.adj_total_updates)))
+            self.ere_update_count = 1 + self.ere_update_count
+            print(f"Before decay: c_k = {c_k_before}, cmin = {self.cmin}")
+
+            c_k = max(c_k_before, self.cmin)
+            print(f"Final c_k after clipping: {c_k}")
+
+
+            #update_num = self.next_idx
+            #c_k = max(int(n * (self.eta ** (update_num * 1000 / total_updates))), self.cmin)
+            #print(f"Using ERE with c_k = {float(c_k):.4f}")
+
+
+        indices_range = range(max(n - c_k, 0), n)
+        indices = random.sample(indices_range, min(batch_size, len(indices_range)))
+        return self._encode_sample(indices)
+    
     def _encode_sample(self, indices):
         obses, actions, rewards, obses_, dones, transition_infos = [], [], [], [], [], []
         for i in indices:
