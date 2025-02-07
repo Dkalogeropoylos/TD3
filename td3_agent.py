@@ -125,10 +125,10 @@ class TD3Agent:
         self.total_it += 1 # delay
         
         
-        #self.update_num += 1  
+        self.update_num += 1  
 
         #print(f"Current buffer size: {self.memory.get_size()}")
-        self.phase_update_idx += 1  # ✅ Tracks updates within a training phase (local `k`)
+        self.phase_update_idx += 1  
 
        
 
@@ -200,10 +200,10 @@ class TD3Agent:
 
    
         if self.total_it % self.args.policy_delay == 0:
-        ## Compute the action chosen by the Actor
+        ## one-hot encode
             actor_actions = self.actor(states)
             actor_discrete_actions = torch.argmax(actor_actions, dim=-1)  
-            actor_one_hot_actions1 = F.one_hot(actor_discrete_actions, num_classes=self.args.num_actions).float()  # One-hot encode
+            actor_one_hot_actions1 = F.one_hot(actor_discrete_actions, num_classes=self.args.num_actions).float()  
             
         
         
