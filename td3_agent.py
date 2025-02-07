@@ -14,7 +14,7 @@ class TD3Agent:
         self.args = args
         self.ID = ID
         self.update_num = 0
-        self.phase_update_idx = 0  # ✅ Tracks updates within a training phase
+        self.phase_update_idx = 0  
         self.total_updates = 6750
         self.phase_updates = 250
         
