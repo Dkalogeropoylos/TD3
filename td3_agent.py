@@ -13,6 +13,10 @@ class TD3Agent:
                  chkpt_dir=None,load_file=None,participant_name=None,ID='First'):
         self.args = args
         self.ID = ID
+        self.update_num = 0
+        self.phase_update_idx = 0  # ✅ Tracks updates within a training phase
+        self.total_updates = 6750
+        self.phase_updates = 250
         
 
         
@@ -119,13 +123,20 @@ class TD3Agent:
     def learn(self, cycle_i):
         
         self.total_it += 1 # delay
-        self.update_num = 0  #not used
+        
+        
+        #self.update_num += 1  
 
         #print(f"Current buffer size: {self.memory.get_size()}")
-     
+        self.phase_update_idx += 1  # ✅ Tracks updates within a training phase (local `k`)
+
+       
+
+        print(f"Learning Step: phase_update_idx={self.phase_update_idx}, c_k should decrease per update")
+        states, actions, rewards, states_, dones, transition_info = self.memory.sample(self.args.batch_size,self.phase_update_idx)
      
 
-        states, actions, rewards, states_, dones, transition_info = self.memory.sample(self.args.batch_size,self.update_num)
+        #states, actions, rewards, states_, dones, transition_info = self.memory.sample(self.args.batch_size,self.update_num)
         #print(f"States shape: {states.shape}")  
         #print(f"Actions shape: {actions.shape}")
      
@@ -189,8 +200,18 @@ class TD3Agent:
 
    
         if self.total_it % self.args.policy_delay == 0:
-        # Compute actor loss
-            q1 = self.critic.q1(states, self.actor(states))
+        ## Compute the action chosen by the Actor
+            actor_actions = self.actor(states)
+            actor_discrete_actions = torch.argmax(actor_actions, dim=-1)  
+            actor_one_hot_actions1 = F.one_hot(actor_discrete_actions, num_classes=self.args.num_actions).float()  # One-hot encode
+            
+        
+        
+        
+        # Compute actor 
+            q1 = self.critic.q1(states, actor_one_hot_actions1)
+        
+            #q1 = self.critic.q1(states, self.actor(states))
             actor_loss = -q1.mean()
             
 
@@ -199,7 +220,7 @@ class TD3Agent:
             actor_loss.backward()
             self.actor_optim.step()
 
-        get networks
+        
             self.soft_update(self.actor_target, self.actor, self.args.tau)
             self.soft_update(self.target_critic, self.critic, self.args.tau)
 
@@ -212,7 +233,7 @@ class TD3Agent:
         self.q1_loss_history.append(q1_loss.item())
         self.q2_loss_history.append(q2_loss.item())
      
-        self.update_num += 1
+        
 
         return actor_loss, q1_loss.item(), q2_loss.item()
 
