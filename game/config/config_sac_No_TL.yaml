@@ -1,0 +1,83 @@
+game:
+    discrete_input: False # True for Discrete or False for Continuous human input
+
+    test_model: False # True if no training happens
+    checkpoint_name: "TD3_20201216_17-25-51" # Date and time of the experiments. Used loading the model created that date (if asked by the user)
+    load_checkpoint: False # True if loading stored model
+    second_human: False # False if playing with RL agent
+    agent_only: False # True if playing only the RL agent (no human-in-the-loop)
+    verbose: True # Used for logging
+    save: True # Save models and logs
+    human_assist: True
+    human_only: False
+
+    # input speed as translated by the game
+    human_speed: 50
+    agent_speed: 50
+    discrete_angle_change: 3
+
+    # position of the goal on the board
+    goal: "left_down" # "left_down" "left_up" "right_down"
+
+
+TD3:
+  discrete: True
+  actor_lr: 0.0003
+  critic_lr: 0.0003
+  layer1_size: 32
+  layer2_size: 32
+  batch_size: 256
+  gamma: 0.99
+  tau: 0.005
+  policy_noise: 0.2
+  noise_clip: 0.5
+  policy_delay: 1
+  max_action: 2.0
+  model_name: no_tl_td3_participant
+  freeze_agent: False
+  reward_function: Shafti
+  chkpt: rl_models\Saved_models\
+  load_checkpoint: True
+  load_file: rl_models\Initial\
+
+  
+  freeze_second_agent: False
+  load_second_agent: False
+  load_second_file: None
+  
+
+
+
+Experiment:
+  start_with_testing_random_agent: True # True to start experiment with testing human with random agent
+  online_updates: False # True if a single gradient update happens after every state transition
+  test_interval: 10
+  agent: TD3
+  # offline gradient updates allocation
+  # Normal: allocates evenly the total number of updates through each session
+  # descending: allocation of total updates using geometric progression with ratio 1/2
+  scheduling: normal # descending normal big_first
+
+  ################################################################################################
+  # max_games_mode: Experiment iterates over games. Each game has a fixed max duration in seconds.
+  # max_interactions_mode: Experiment iterates over steps. Each game has a fixed max duration in seconds.
+  ################################################################################################
+  mode: no_tl   # Choose max_games_mode or max_interactions_mode
+
+  no_tl:
+    max_blocks: 6  # max training games per experiment
+    games_per_block: 10
+    max_duration: 40  # max duration per game in seconds
+    buffer_memory_size: 3500
+    action_duration: 0.2 # Time duration in sec between consecutive RL agent actions
+    learn_every_n_games: 10 # Perform offline gradient updates after every `learn_every_n_games` episodes
+    updates_per_ogu: 250 # Total number of offline gradient updates throughout the whole experiment
+    reward_scale: 2
+    log_interval: 10  # print avg reward in the interval
+
+
+GUI:
+  start_up_screen_display_duration: 5 # the time in sec the set-up screen is being displayed
+  timeout_screen_display_duration: 3  # the time in sec the timeout screen is being displayed
+  goal_screen_display_duration: 3 # the time in sec the goal screen is being displayed
+  popup_window_time: 3  # the time in sec the timeout or goal screen is being displayed
